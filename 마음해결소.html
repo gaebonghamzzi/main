@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마음 해결사</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Jua', sans-serif;
+            /* 사과 이모지 배경 추가 */
+            background-color: #fdfff2;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='80' opacity='0.1'%3E🍎%3C/text%3E%3C/svg%3E");
+            background-size: 100px 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 기본적으로 모든 뷰는 숨김 */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* 공통 스타일 */
+        h1 { color: #333; font-size: 2rem; margin-bottom: 15px; text-align: center; }
+        p { color: #555; font-size: 1.2rem; line-height: 1.6; text-align: center; }
+        button { font-family: 'Jua', sans-serif; padding: 20px; font-size: 1.3rem; border: none; border-radius: 15px; cursor: pointer; transition: all 0.2s; background-color: #e0e0e0; color: #333; border-bottom: 5px solid #ccc; }
+        button:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        button:active { transform: translateY(1px); border-bottom-width: 2px; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; border-bottom-color: #aaa; }
+        .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
+        .full-width-btn { grid-column: 1 / -1; }
+        .back-btn { font-size: 1rem; padding: 10px 15px; background-color: #6c757d; color: white; margin-top: 20px; }
+
+        /* 로그인 & 회원가입 화면 스타일 */
+        .form-box input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-family: 'Jua', sans-serif;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .form-box {
+            margin-top: 20px;
+        }
+
+        /* 학생용 페이지 스타일 */
+        textarea { width: 100%; padding: 15px; font-family: 'Jua', sans-serif; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; margin-top: 15px; resize: vertical; }
+        .notice { font-size: 1rem; color: #d9534f; font-weight: bold; background-color: #f9e4e4; padding: 10px; border-radius: 10px; }
+        button.reason-btn { background-color: #fff3cd; border-color: #f7d97e; }
+        button.write-btn { background-color: #e2d1dd; border-color: #c0a3bb; }
+        button.dialogue-btn { background-color: #d1e7dd; border-color: #a3cfbb; }
+        button.success-btn { background-color: #cff4fc; border-color: #9eeaf9; }
+        button.help-btn { background-color: #f8d7da; border-color: #f1aeb5; animation: pulse 1.5s infinite; }
+        #teacher-call-btn { grid-column: 1 / -1; background-color: #ff6b6b; color: white; border-color: #e05252; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* 교사용 페이지 스타일 */
+        #teacher-view { font-family: 'Noto Sans KR', sans-serif; }
+        #teacher-view .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #teacher-view .header button { font-size: 1rem; padding: 10px 15px; background-color: #6c757d; }
+        #teacher-view .report-container { max-height: 60vh; overflow-y: auto; }
+        .report-card { background-color: #fdfdfd; border: 1px solid #eee; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 15px; margin-bottom: 15px; }
+        .report-card .info { display: flex; justify-content: space-between; font-size: 0.9rem; color: #888; margin-bottom: 10px; }
+        .report-card .content { font-size: 1rem; background-color: #f9f9f9; padding: 15px; border-radius: 5px; white-space: pre-wrap; margin-bottom: 15px; }
+        .report-card .status { font-weight: bold; padding: 5px 10px; border-radius: 5px; text-align: center; margin-bottom: 15px; }
+        .status.unresolved { background-color: #ffeeba; color: #856404; }
+        .status.self-resolved { background-color: #d4edda; color: #155724; }
+        .status.teacher-resolved { background-color: #d1ecf1; color: #0c5460; }
+        .report-card .actions button { width: 100%; padding: 10px; font-size: 1rem; background-color: #28a745; }
+        .report-card .actions button:disabled { background-color: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- 1. 초기 선택 뷰 -->
+        <div id="initial-view" class="view active">
+            <h1>마음 해결사</h1>
+            <p>환영합니다! 무엇을 할까요?</p>
+            <div class="button-grid">
+                <button id="go-to-login-btn">로그인</button>
+                <button id="go-to-signup-btn">학급 만들기 (교사)</button>
+            </div>
+        </div>
+
+        <!-- 2. 교사 회원가입 뷰 -->
+        <div id="signup-view" class="view">
+            <h1>새로운 학급 만들기</h1>
+            <div class="form-box">
+                <input type="text" id="signup-class-code" placeholder="새로운 학급 코드">
+                <input type="password" id="signup-password" placeholder="사용할 비밀번호">
+                <button id="signup-btn" class="full-width-btn">만들기</button>
+                <button class="back-btn full-width-btn" onclick="showView(document.getElementById('initial-view'))">처음으로</button>
+            </div>
+        </div>
+
+        <!-- 3. 로그인 뷰 -->
+        <div id="login-view" class="view">
+            <h1>로그인</h1>
+            <div class="button-grid">
+                <button id="show-student-login">학생</button>
+                <button id="show-teacher-login">교사</button>
+            </div>
+            <div id="student-login-box" class="form-box" style="display: none;">
+                <input type="text" id="student-class-code" placeholder="학급 코드">
+                <input type="text" id="student-name" placeholder="이름">
+                <button id="student-login-btn" class="full-width-btn">입장하기</button>
+            </div>
+            <div id="teacher-login-box" class="form-box" style="display: none;">
+                <input type="text" id="teacher-class-code" placeholder="학급 코드">
+                <input type="password" id="teacher-password" placeholder="비밀번호">
+                <button id="teacher-login-btn" class="full-width-btn">입장하기</button>
+            </div>
+            <button class="back-btn full-width-btn" onclick="showView(document.getElementById('initial-view'))">처음으로</button>
+        </div>
+
+        <!-- 4. 학생용 뷰 -->
+        <div id="student-view" class="view"></div>
+
+        <!-- 5. 교사용 뷰 -->
+        <div id="teacher-view" class="view"></div>
+
+    </div>
+
+    <!-- Firebase SDK 추가 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, setDoc, getDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "...", authDomain: "...", projectId: "..." };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        const firebaseApp = initializeApp(firebaseConfig);
+        const db = getFirestore(firebaseApp);
+        const auth = getAuth(firebaseApp);
+        setLogLevel('debug');
+
+        // 전역 변수
+        let currentUser = null;
+        let currentReportId = null;
+        let unsubscribe = null;
+
+        // DOM 요소
+        const allViews = document.querySelectorAll('.view');
+        const initialView = document.getElementById('initial-view');
+        const signupView = document.getElementById('signup-view');
+        const loginView = document.getElementById('login-view');
+        const studentView = document.getElementById('student-view');
+        const teacherView = document.getElementById('teacher-view');
+        
+        // 인증 관련 버튼들
+        const goToLoginBtn = document.getElementById('go-to-login-btn');
+        const goToSignupBtn = document.getElementById('go-to-signup-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const studentLoginBtn = document.getElementById('student-login-btn');
+        const teacherLoginBtn = document.getElementById('teacher-login-btn');
+        const authButtons = [goToLoginBtn, goToSignupBtn, signupBtn, studentLoginBtn, teacherLoginBtn];
+
+        // 뷰 전환 함수
+        window.showView = (viewToShow) => {
+            allViews.forEach(v => v.classList.remove('active'));
+            viewToShow.classList.add('active');
+        };
+
+        // --- 이벤트 리스너 설정 ---
+        goToLoginBtn.onclick = () => showView(loginView);
+        goToSignupBtn.onclick = () => showView(signupView);
+        
+        // --- 회원가입 로직 ---
+        signupBtn.onclick = async () => {
+            const classCode = document.getElementById('signup-class-code').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+            if (!classCode || !password) {
+                alert("학급 코드와 비밀번호를 모두 입력해주세요.");
+                return;
+            }
+
+            signupBtn.disabled = true;
+            signupBtn.innerText = '확인 중...';
+
+            const classRef = doc(db, `/artifacts/${appId}/public/data/classes`, classCode);
+            
+            try {
+                const docSnap = await getDoc(classRef);
+
+                if (docSnap.exists()) {
+                    alert('가입 실패, 이미 사용된 학급 코드입니다. 다른 학급 코드를 입력해 주세요.');
+                } else {
+                    await setDoc(classRef, { password: password });
+                    alert('가입 성공! 학급코드와 비밀번호를 입력하여 교사 로그인을 해 보세요.');
+                    
+                    document.getElementById('signup-class-code').value = '';
+                    document.getElementById('signup-password').value = '';
+                    showView(loginView);
+                }
+            } catch (e) {
+                console.error("Error during signup process: ", e);
+                alert("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
+            } finally {
+                signupBtn.disabled = false;
+                signupBtn.innerText = '만들기';
+            }
+        };
+
+        // --- 로그인 로직 ---
+        document.getElementById('show-student-login').onclick = () => {
+            document.getElementById('student-login-box').style.display = 'block';
+            document.getElementById('teacher-login-box').style.display = 'none';
+        };
+        document.getElementById('show-teacher-login').onclick = () => {
+            document.getElementById('teacher-login-box').style.display = 'block';
+            document.getElementById('student-login-box').style.display = 'none';
+        };
+
+        studentLoginBtn.onclick = async () => {
+            const classCode = document.getElementById('student-class-code').value.trim();
+            const name = document.getElementById('student-name').value.trim();
+            if (!classCode || !name) { alert("학급 코드와 이름을 모두 입력해주세요."); return; }
+            
+            studentLoginBtn.disabled = true;
+            studentLoginBtn.innerText = '확인 중...';
+
+            const classRef = doc(db, `/artifacts/${appId}/public/data/classes`, classCode);
+            
+            try {
+                const docSnap = await getDoc(classRef);
+                if (docSnap.exists()) {
+                    currentUser = { role: 'student', name: name, classCode: classCode };
+                    startStudentApp();
+                } else {
+                    alert("학급 코드가 맞는지 확인해주세요.");
+                }
+            } catch (e) {
+                console.error("Error during student login: ", e);
+                alert("로그인 중 오류가 발생했습니다.");
+            } finally {
+                studentLoginBtn.disabled = false;
+                studentLoginBtn.innerText = '입장하기';
+            }
+        };
+
+        teacherLoginBtn.onclick = async () => {
+            const classCode = document.getElementById('teacher-class-code').value.trim();
+            const password = document.getElementById('teacher-password').value.trim();
+            if (!classCode || !password) { alert("학급 코드와 비밀번호를 모두 입력해주세요."); return; }
+
+            teacherLoginBtn.disabled = true;
+            teacherLoginBtn.innerText = '확인 중...';
+
+            const classRef = doc(db, `/artifacts/${appId}/public/data/classes`, classCode);
+            
+            try {
+                const docSnap = await getDoc(classRef);
+                if (docSnap.exists() && docSnap.data().password === password) {
+                    currentUser = { role: 'teacher', classCode: classCode };
+                    startTeacherApp();
+                } else {
+                    alert("학급 코드 또는 비밀번호가 맞지 않습니다.");
+                }
+            } catch (e) {
+                console.error("Error during teacher login: ", e);
+                alert("로그인 중 오류가 발생했습니다.");
+            } finally {
+                teacherLoginBtn.disabled = false;
+                teacherLoginBtn.innerText = '입장하기';
+            }
+        };
+        
+        // --- 학생 앱 시작 ---
+        function startStudentApp() {
+            studentView.innerHTML = `
+                <div id="s-step1" class="s-step" style="display: block;">
+                    <h1>속상한 일이 있었구나, ${currentUser.name}.</h1>
+                    <p>지금 너의 마음과 가장 비슷한 감정은 무엇이니?</p>
+                    <div class="button-grid">
+                        <button class="reason-btn" onclick="mindSolverApp.selectEmotion('😡 화가 나요')">😡 화가 나요</button>
+                        <button class="reason-btn" onclick="mindSolverApp.selectEmotion('😭 슬퍼요')">😭 슬퍼요</button>
+                        <button class="reason-btn" onclick="mindSolverApp.selectEmotion('😟 억울해요')">😟 억울해요</button>
+                        <button class="reason-btn" onclick="mindSolverApp.selectEmotion('😰 답답해요')">😰 답답해요</button>
+                    </div>
+                </div>
+                <div id="s-step2" class="s-step" style="display: none;"><h1>어떤 일이 있었는지 알려줄래?</h1><p class="notice">언제, 어디서, 누가, 어떤 말이나 행동을 했는지<br>정확한 사실만 적어줘.</p><textarea id="incident-report" rows="6" placeholder="여기에 있었던 일을 차근차근 적어보자..."></textarea><div class="button-grid"><button class="write-btn full-width-btn" onclick="mindSolverApp.saveReport()">다 적었어요</button></div></div>
+                <div id="s-step3" class="s-step" style="display: none;"><h1>잘 적어주었어. 이제 너의 마음을 친구에게 이야기해볼까?</h1><p>"나는 네가 (  )행동을 해서, (  )감정이 들었어."<br>이렇게 솔직하게 말해보는 건 어때?</p><div class="button-grid"><button class="dialogue-btn full-width-btn" onclick="mindSolverApp.nextStudentStep(4)">좋아요, 용기 내볼게요!</button></div></div>
+                <div id="s-step4" class="s-step" style="display: none;"><h1>친구와 이야기해보니 어땠어?</h1><p>마음이 잘 해결되었는지 알려줘!</p><div class="button-grid"><button class="success-btn" onclick="mindSolverApp.updateStatus('자체 해결 완료')">네, 잘 해결됐어요!</button><button class="help-btn" onclick="mindSolverApp.nextStudentStep(6)">아니요, 도움이 필요해요</button></div></div>
+                <div id="s-step5" class="s-step" style="display: none;"><h1>정말 멋지다!</h1><p>대화로 문제를 해결한 너희 모두가 자랑스러워!<br>다시 처음으로 돌아가려면 아래 버튼을 눌러줘.</p><div class="button-grid"><button class="full-width-btn" onclick="location.reload()">처음으로</button></div></div>
+                <div id="s-step6" class="s-step" style="display: none;"><h1>괜찮아, 그럴 수 있어.</h1><p>선생님께 도움을 요청하면, 선생님 자리에서 알림이 울릴 거야.<br>버튼을 누르고 잠시만 기다려줘!</p><div class="button-grid"><button id="teacher-call-btn" class="full-width-btn" onclick="mindSolverApp.callTeacher()">🚨 선생님! 도와주세요! 🚨</button></div></div>
+                <div id="s-step7" class="s-step" style="display: none;">
+                    <h1>선생님께 알렸어요!</h1>
+                    <p>선생님과 이야기하고 문제가 해결되면<br>아래 버튼을 눌러 마무리해주세요.</p>
+                    <div class="button-grid">
+                        <button class="success-btn full-width-btn" onclick="location.reload()">해결됐어요!</button>
+                    </div>
+                </div>
+            `;
+            showView(studentView);
+        }
+        
+        // 학생용 앱 함수들
+        let currentStudentStep = 1;
+        let selectedEmotion = '';
+        window.mindSolverApp = {
+            nextStudentStep: (step) => {
+                document.querySelector(`#s-step${currentStudentStep}`).style.display = 'none';
+                document.querySelector(`#s-step${step}`).style.display = 'block';
+                currentStudentStep = step;
+            },
+            selectEmotion: (emotion) => { selectedEmotion = emotion; window.mindSolverApp.nextStudentStep(2); },
+            saveReport: async () => {
+                const reportText = document.getElementById('incident-report').value;
+                if (!reportText.trim()) { alert('어떤 일이 있었는지 적어줘!'); return; }
+                const newReport = { studentName: currentUser.name, emotion: selectedEmotion, text: reportText, timestamp: new Date(), status: '미해결', classCode: currentUser.classCode };
+                try {
+                    const docRef = await addDoc(collection(db, `/artifacts/${appId}/public/data/conflictReports`), newReport);
+                    currentReportId = docRef.id;
+                    window.mindSolverApp.nextStudentStep(3);
+                } catch (e) { console.error("Error adding document: ", e); alert("오류가 발생했습니다. 다시 시도해주세요."); }
+            },
+            updateStatus: async (newStatus) => {
+                if (!currentReportId) return;
+                try {
+                    const reportRef = doc(db, `/artifacts/${appId}/public/data/conflictReports`, currentReportId);
+                    await updateDoc(reportRef, { status: newStatus });
+                    window.mindSolverApp.nextStudentStep(5);
+                } catch (e) { console.error("Error updating document: ", e); }
+            },
+            callTeacher: () => {
+                document.body.style.backgroundColor = '#ff6b6b';
+                setTimeout(() => { document.body.style.backgroundColor = '#fdfff2'; }, 1000);
+                window.mindSolverApp.nextStudentStep(7);
+            }
+        };
+
+        // --- 교사 앱 시작 ---
+        function startTeacherApp() {
+            teacherView.innerHTML = `
+                <div class="header">
+                    <h1>${currentUser.classCode}</h1>
+                    <button id="logout-btn">로그아웃</button>
+                </div>
+                <div id="report-list" class="report-container"></div>
+            `;
+            document.getElementById('logout-btn').onclick = () => location.reload();
+            showView(teacherView);
+            renderReportsFromFirestore();
+        }
+
+        function renderReportsFromFirestore() {
+            const reportListContainer = document.getElementById('report-list');
+            const q = query(collection(db, `/artifacts/${appId}/public/data/conflictReports`), where("classCode", "==", currentUser.classCode));
+
+            unsubscribe = onSnapshot(q, (querySnapshot) => {
+                reportListContainer.innerHTML = '';
+                if (querySnapshot.empty) { reportListContainer.innerHTML = '<p>아직 제출된 내용이 없습니다.</p>'; return; }
+                const reports = [];
+                querySnapshot.forEach((doc) => reports.push({ id: doc.id, ...doc.data() }));
+                reports.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+
+                reports.forEach(report => {
+                    const card = document.createElement('div');
+                    card.className = 'report-card';
+                    let statusClass = '', statusText = '';
+                    switch(report.status) {
+                        case '자체 해결 완료': statusClass = 'self-resolved'; statusText = '자체 해결 완료'; break;
+                        case '지도 완료': statusClass = 'teacher-resolved'; statusText = '지도 완료'; break;
+                        default: statusClass = 'unresolved'; statusText = '미해결';
+                    }
+                    card.innerHTML = `<div class="info"><span><b>학생:</b> ${report.studentName}</span><span class="timestamp">${report.timestamp.toDate().toLocaleString()}</span></div><div class="content"><b>감정:</b> ${report.emotion}<br><hr><b>내용:</b><br>${report.text}</div><div class="status ${statusClass}">${statusText}</div><div class="actions"><button onclick="window.teacherApp.markAsResolved('${report.id}')" ${report.status !== '미해결' ? 'disabled' : ''}>${report.status === '미해결' ? '지도 완료로 표시' : '완료됨'}</button></div>`;
+                    reportListContainer.appendChild(card);
+                });
+            });
+        }
+        
+        window.teacherApp = {
+            markAsResolved: async (docId) => {
+                try {
+                    const reportRef = doc(db, `/artifacts/${appId}/public/data/conflictReports`, docId);
+                    await updateDoc(reportRef, { status: '지도 완료' });
+                } catch(e) { console.error("Error updating document: ", e); }
+            }
+        };
+
+        // Firebase 인증 (수정됨)
+        (async () => {
+            // 시작 시 버튼 비활성화
+            authButtons.forEach(btn => btn.disabled = true);
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("Firebase Auth signed in.");
+                // 인증 성공 시 버튼 활성화
+                authButtons.forEach(btn => btn.disabled = false);
+            } catch (error) {
+                console.error("Firebase Auth Error: ", error);
+                initialView.innerHTML = '<h1>오류 발생</h1><p>인증에 실패했습니다. 페이지를 새로고침 해주세요.</p>';
+            }
+        })();
+
+    </script>
+</body>
+</html>
+
